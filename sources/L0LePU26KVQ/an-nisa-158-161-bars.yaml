@@ -10,20 +10,20 @@ trim: [78.8, 126.5]
 
 groups:
   # Ayah 158 (8 words)
-  - n_words: 4        # بل رفعه الله إليه
-  - n_words: 4        # وكان الله عزيزا حكيما
+  - n_words: 4
+  - n_words: 4
 
   # Ayah 159 (14 words)
-  - n_words: 5        # وإن من أهل الكتاب إلا
-  - n_words: 4        # ليؤمنن به قبل موته
-  - n_words: 5        # ويوم القيامة يكون عليهم شهيدا
+  - n_words: 5
+  - n_words: 4
+  - n_words: 5
 
   # Ayah 160 (14 words)
-  - n_words: 4        # فبظلم من الذين هادوا
-  - n_words: 5        # حرمنا عليهم طيبات أحلت لهم
-  - n_words: 5        # وبصدهم عن سبيل الله كثيرا
+  - n_words: 4
+  - n_words: 5
+  - n_words: 5
 
   # Ayah 161 (14 words)
-  - n_words: 5        # وأخذهم الربا وقد نهوا عنه
-  - n_words: 4        # وأكلهم أموال الناس بالباطل
-  - n_words: 5        # وأعتدنا للكافرين منهم عذابا أليما
+  - n_words: 5
+  - n_words: 4
+  - n_words: 5

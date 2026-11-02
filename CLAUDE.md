@@ -5,7 +5,7 @@ To *produce a reel* rather than change code, invoke the `make-post` skill
 
 ## Codebase map
 
-Qur'an recitation video -> subtitled reel. Six standalone scripts under
+Qur'an recitation video -> subtitled reel. Standalone scripts under
 `pipeline/`; each is runnable on its own, reads and writes plain files, and
 owns one stage. There is deliberately NO shared util module — `fetch.py`
 and `transcribe.py` each carry their own ~15-line `.env` reader so every
@@ -60,6 +60,10 @@ script stays independently runnable; do not "deduplicate" that.
   classes with their three hooks (plate / per_phrase / apply), and the
   snow shader. Ported verbatim from `legacy/qc/`; the scalar algebra is not
   to be re-derived.
+- **`pipeline/render_bloom.py`** — `bloom`: glowing text over a treated
+  still. **`pipeline/render_woven_box.py`** — `woven_box`: square rounded
+  footage box, Jomhuria Arabic-only. `bars_static` is `render_bars.py` over
+  `background_image`. **`pipeline/fetch_bg.py`** — URL -> local background.
 - **`legacy/`** — the two previous implementations, archived intact with
   specs, tests and golden fixtures. Reference material only: never run it,
   never edit it, never import from it in pipeline code.
@@ -99,7 +103,7 @@ script stays independently runnable; do not "deduplicate" that.
 - **Minimize.** The smallest diff that fully solves the problem; no new
   abstractions, registries, or option surfaces for hypothetical needs. A
   new config key needs a concrete reel that needs it. A new file needs a
-  reason the existing six can't hold the code.
+  reason the existing files can't hold the code.
 - **No new dependencies.** The pipeline is stdlib + Pillow + PyYAML (+ the
   isolated ASR/opencv venvs). Adding anything else is an owner decision to
   propose, not make.

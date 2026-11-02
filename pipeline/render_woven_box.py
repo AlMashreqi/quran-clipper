@@ -17,6 +17,8 @@ import sys
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont, features
 
+from render_default import detect_subject
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 FONT_DIR = os.path.join(ROOT, "assets", "fonts")
@@ -63,61 +65,10 @@ FADE = 0.4
 # render_bars.py's FPS constant.
 FPS = 30
 
-FACE_MODEL = os.path.join(ROOT, "tools", "models",
-                          "face_detection_yunet_2023mar.onnx")
-FACE_MODEL_URL = ("https://github.com/opencv/opencv_zoo/raw/main/models/"
-                  "face_detection_yunet/face_detection_yunet_2023mar.onnx")
 
 
 def run(cmd, **kw):
     return subprocess.run(cmd, check=True, capture_output=True, text=True, **kw)
-
-
-# ---------- subject detection (vision) --------------------------------------
-# Ported from render_default.py's detect_subject -- kept duplicated rather
-# than imported so this renderer stays independently runnable, matching
-# render_bloom.py's precedent.
-
-def detect_subject(video_path, info, tmp, samples=5):
-    """Median YuNet face box over sampled frames, or None on a weak signal."""
-    try:
-        import cv2
-    except ImportError:
-        print("      opencv not installed -- skipping subject detection")
-        return None
-    if not os.path.exists(FACE_MODEL):
-        os.makedirs(os.path.dirname(FACE_MODEL), exist_ok=True)
-        print("      fetching face model -> %s" % os.path.basename(FACE_MODEL))
-        try:
-            run(["curl", "-sL", "-o", FACE_MODEL, FACE_MODEL_URL])
-        except subprocess.CalledProcessError:
-            print("      face model download failed -- skipping detection")
-            return None
-
-    detector = cv2.FaceDetectorYN.create(FACE_MODEL, "",
-                                         (info["width"], info["height"]),
-                                         score_threshold=0.6)
-    tmp_png = os.path.join(tmp, "_probe.png")
-    boxes = []
-    for k in range(samples):
-        t = info["duration"] * (k + 1) / (samples + 1)
-        run([FFMPEG, "-y", "-v", "error", "-ss", "%.2f" % t, "-i", video_path,
-             "-frames:v", "1", "-update", "1", tmp_png])
-        frame = cv2.imread(tmp_png)
-        if frame is None:
-            continue
-        _, faces = detector.detect(frame)
-        if faces is not None and len(faces):
-            x, y, w, h = max(faces, key=lambda f: f[2] * f[3])[:4]
-            boxes.append((int(x), int(y), int(w), int(h)))
-    if len(boxes) * 2 < samples:
-        print("      subject detection weak (%d/%d frames) -- ignoring"
-              % (len(boxes), samples))
-        return None
-    med = lambda vals: sorted(vals)[len(vals) // 2]  # noqa: E731
-    x, y = med([b[0] for b in boxes]), med([b[1] for b in boxes])
-    w, h = med([b[2] for b in boxes]), med([b[3] for b in boxes])
-    return {"cx": x + w // 2, "cy": y + h // 2, "w": w, "h": h, "hits": len(boxes)}
 
 
 def square_crop_filter(info, subject):
@@ -380,6 +331,6 @@ def render(plan):
 def strip_display_marks(text):
     # Same tajweed-annotation strip as render_default.strip_display_marks --
     # ported rather than imported to keep this file self-contained.
-    for c in ("۟", "ۭ", "ـ"):
+    for c in ("\u06DF", "\u06ED", "\u0640"):
         text = text.replace(c, "")
     return text

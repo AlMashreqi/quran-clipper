@@ -77,7 +77,7 @@ Schema: `tools/render-venv/bin/python pipeline/generate.py --print-schema`.
 The minimum that makes a good reel:
 
 ```yaml
-style: bars                       # or default
+style: bars                       # or default | bars_static | bloom | woven_box
 signature: "Revelation.mp3"        # REQUIRED; null = burn nothing
 surah: 78
 ayah_start: 31
@@ -188,7 +188,8 @@ full and use `trim` instead.
   config overwrites its own reel — that is fine. Never delete or overwrite
   a DIFFERENT reel, and never rename one without explicit intent: a posted
   reel's filename is its identity.
-- **Caption Text File**: Always generate the post caption text file (`.txt`) in the same folder as the output video file (e.g., `reels/<reel-name>.txt`). `generate.py` generates this automatically upon rendering (producing English & Arabic caption text lines as specified).
+- **Caption Text File**: Always generate the post caption text file (`.txt`) in the same folder as the output video file (e.g., `reels/<reel-name>.txt`). `generate.py` writes it on every render, with English and Arabic lines. Set `reciter` and `reciter_ar` in the config: without them the caption names no reciter.
+- **Background images**: `bars_static` and `bloom` need a local `background_image`. Fetch a URL first with `pipeline/fetch_bg.py <url> sources/<id>`; a URL in the config is an error.
 - The legacy implementations under `legacy/` are ARCHIVED references —
   never run them as part of this flow.
 

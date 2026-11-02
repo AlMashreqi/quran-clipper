@@ -61,7 +61,7 @@ required key (a string burned bottom-centre, or an explicit `null`);
 it:
 
 ```yaml
-style: bars                       # bars | default
+style: bars                       # default | bars | bars_static | bloom | woven_box
 signature: "Revelation.mp3"        # required; always horizontally centered
 signature_offset: 0               # px, vertical only: + lower / - higher
 surah: 78

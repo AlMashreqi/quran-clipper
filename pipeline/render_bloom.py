@@ -14,9 +14,7 @@ Processing order for background:
 
 Called by generate.py with the resolved plan; not a standalone CLI.
 """
-import math
 import os
-import random
 import subprocess
 import sys
 
@@ -41,7 +39,7 @@ ENGLISH_FONTS = {
     "gentium": os.path.join(FONT_DIR, "GentiumPlus-Regular.ttf"),
 }
 
-DISPLAY_STRIP_CHARS = {"۟", "ۭ", "ـ"}
+DISPLAY_STRIP_CHARS = {"\u06DF", "\u06ED", "\u0640"}
 EN_AR_SIZE_RATIO = 121.0 / 176.0  # 121px English for 176px Arabic
 FADE = 0.4
 
@@ -58,10 +56,6 @@ SHADOW_COLOR = (0, 0, 0)
 SHADOW_OPACITY = 0.20              # 15-25%
 SHADOW_BLUR = 6.0                  # 5-8 px
 
-FACE_MODEL = os.path.join(ROOT, "tools", "models", "face_detection_yunet_2023mar.onnx")
-FACE_MODEL_URL = "https://github.com/opencv/opencv_zoo/raw/main/models/face_detection_yunet/face_detection_yunet_2023mar.onnx"
-
-
 def run(cmd, **kw):
     return subprocess.run(cmd, check=True, capture_output=True, text=True, **kw)
 
@@ -70,67 +64,10 @@ def strip_display_marks(text):
     return "".join(c for c in text if c not in DISPLAY_STRIP_CHARS)
 
 
-# ---------- vision / subject detection ---------------------------------------
-
-def detect_subject(video_path, info, tmp, samples=5):
-    try:
-        import cv2
-    except ImportError:
-        print("      opencv not installed -- skipping subject detection")
-        return None
-    if not os.path.exists(FACE_MODEL):
-        os.makedirs(os.path.dirname(FACE_MODEL), exist_ok=True)
-        try:
-            run(["curl", "-sL", "-o", FACE_MODEL, FACE_MODEL_URL])
-        except subprocess.CalledProcessError:
-            return None
-
-    detector = cv2.FaceDetectorYN.create(FACE_MODEL, "",
-                                         (info["width"], info["height"]),
-                                         score_threshold=0.6)
-    tmp_png = os.path.join(tmp, "_probe.png")
-    boxes = []
-    for k in range(samples):
-        t = info["duration"] * (k + 1) / (samples + 1)
-        run([FFMPEG, "-y", "-v", "error", "-ss", "%.2f" % t, "-i", video_path,
-             "-frames:v", "1", "-update", "1", tmp_png])
-        frame = cv2.imread(tmp_png)
-        if frame is None:
-            continue
-        _, faces = detector.detect(frame)
-        if faces is not None and len(faces):
-            x, y, w, h = max(faces, key=lambda f: f[2] * f[3])[:4]
-            boxes.append((int(x), int(y), int(w), int(h)))
-    if len(boxes) * 2 < samples:
-        return None
-    med = lambda vals: sorted(vals)[len(vals) // 2]
-    x, y = med([b[0] for b in boxes]), med([b[1] for b in boxes])
-    w, h = med([b[2] for b in boxes]), med([b[3] for b in boxes])
-    return {"cx": x + w // 2, "cy": y + h // 2, "w": w, "h": h, "hits": len(boxes)}
-
-
-def vertical_crop_filter(info, subject, target_w=1080, target_h=1920):
-    crop_w = int(info["height"] * target_w / target_h) // 2 * 2
-    center = subject["cx"] if subject else info["width"] // 2
-    x = max(0, min(info["width"] - crop_w, center - crop_w // 2))
-    return ("crop=%d:%d:%d:0,scale=%d:%d:flags=lanczos"
-            % (crop_w, info["height"], x, target_w, target_h)), x
-
-
-def output_size(w, h):
-    if not w or not h:
-        return 1080, 1920
-    if h >= w:
-        short = max(720, min(1080, w))
-        return short, int(short * h / w) // 2 * 2
-    short = max(720, min(1080, h))
-    return int(short * w / h) // 2 * 2, short
-
-
 # ---------- text rendering with bloom & outer glow ---------------------------
 
 def font_height(font):
-    bbox = font.getbbox("Ay؀")
+    bbox = font.getbbox("Ay\u0600")
     return bbox[3] - bbox[1]
 
 

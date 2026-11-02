@@ -94,7 +94,7 @@ tools/render-venv/bin/python pipeline/generate.py sources/<id>/<reel-name>.yaml
 authoritative schema (generated from the code, cannot drift). The shape:
 
 ```yaml
-style: bars                       # bars | default
+style: bars                       # default | bars | bars_static | bloom | woven_box
 signature: "Revelation.mp3"        # REQUIRED on every reel; null = burn nothing
 
 surah: 78                         # omit all three to auto-detect from the
@@ -137,6 +137,11 @@ International and Mufti Taqi Usmani. Check every card against both before
 accepting a render: one rendering can paraphrase in a way that hides a
 mis-split, and where the two editions agree on clause order, a card whose
 English contradicts them is wrong.
+
+`verses: ["2:201", "2:201", "49:6"]` replaces the span when the reciter repeats
+or jumps; order and repeats are kept. Each render writes the post caption beside
+the reel as `<reel>.txt`, naming `reciter` / `reciter_ar` when the config has
+them and no one when it does not.
 
 Output resolution: the `default` and `woven_box` styles' canvas is clamped
 so its short side (for `woven_box`, its one side) sits in [720, 1080] — a
@@ -196,6 +201,7 @@ transcript; whisper.json records which backend wrote it.
 * **`bars_static`** — the full `bars` layout, transitions, and FX stack
   rendered over a still-photo background (`background_image`) scaled and
   graded into the 16:9 band with auto-derived pill color from the image.
+  `background_image` is required and local; `fetch_bg.py` fetches one.
 * **`bloom`** — bloomy and glowing full-frame static background with glowing
   Arabic & English text.
 * **`woven_box`** — square (1:1) canvas: the footage sits in a rounded-corner
@@ -207,5 +213,5 @@ transcript; whisper.json records which backend wrote it.
   the footage inside the box. No English, no verse-number ornament, no `fx:`
   stack.
 
-Subtitles are **centered by default** in both styles; `x_offset` /
+Subtitles are **centered by default** in every style; `x_offset` /
 `y_offset` (px) are the only placement knobs.
