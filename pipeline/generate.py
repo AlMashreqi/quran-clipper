@@ -50,7 +50,7 @@ FFPROBE = os.environ.get("QC_FFPROBE") or "ffprobe"
 MAX_HOLD = 3.0
 
 DEFAULTS = {
-    "style": "default",          # default | bars
+    "style": "default",          # default | bars | bloom | woven_box
     "input": None,               # media path; default: source.* beside config
     "whisper": None,             # word timings; default: whisper.json beside it
     "output": None,              # default: reels/<config-name>.mp4
@@ -58,6 +58,9 @@ DEFAULTS = {
     "surah": None,               # verse span; omit all three to auto-detect
     "ayah_start": None,          # from the whisper transcript (reliable only
     "ayah_end": None,            # for short 1-4 ayah windows)
+    "verses": None,              # explicit verse list: ["2:201", "2:202", ...]
+    "reciter": None,             # English reciter name for caption output
+    "reciter_ar": None,          # Arabic reciter name for caption output
 
     "groups": None,              # caption splits -- see --print-schema
 
@@ -106,8 +109,8 @@ def config_schema():
 `signature` is the only required key; with the standard layout everything
 else has a working default.
 
-    style: bars                     # bars | default
-    signature: "TilawatQuraniyyah"  # REQUIRED. Burned bottom-center; null = none
+    style: bars                     # bars | default | bloom | woven_box
+    signature: "Revelation.mp3"      # REQUIRED. Burned bottom-center; null = none
 
     surah: 33                       # verse span. Omit all three to auto-detect
     ayah_start: 56                  # from whisper.json (short clips only)
@@ -141,6 +144,10 @@ else has a working default.
     # bars style: bar_color ("#RRGGBB" | omit for auto), crop {x,y,w,h},
     #   fx: {heat: false, ...} to switch stages off (grade scrim glow
     #   barglow textglow scan snow heat; heat is ~half the render time)
+    # woven_box style: square (1:1) reel, footage in a rounded-corner box
+    #   inset 90% of the canvas with a woven-texture grain, Jomhuria
+    #   Arabic-only captions. Reuses detect_subject/x_offset/y_offset/dim/
+    #   signature_offset; no style-specific config keys.
 
     input / whisper / output        # only to override the standard layout
 
@@ -659,11 +666,11 @@ def load_config(path):
                          "would be silently ignored otherwise"
                          % (path, ", ".join(unknown)))
     cfg = {**DEFAULTS, **raw}
-    if cfg["style"] not in ("default", "bars"):
-        raise SystemExit("style must be `default` or `bars`, not %r"
-                         % cfg["style"])
+    if cfg["style"] not in ("default", "bars", "bars_static", "bars static", "bars-static", "static_bars", "bloom", "glowing", "static_bloom", "woven_box"):
+        raise SystemExit("style must be `default`, `bars`, `bars_static`, `bloom`, "
+                         "or `woven_box`, not %r" % cfg["style"])
     if cfg["verse_numbers"] is None:
-        cfg["verse_numbers"] = cfg["style"] == "default"
+        cfg["verse_numbers"] = cfg["style"] in ("default", "bloom", "glowing", "static_bloom")
     return cfg
 
 
@@ -697,8 +704,16 @@ def resolve_paths(cfg, config_path, output_override=None):
         or os.path.join(ROOT, "reels", stem + ".mp4"))
     cfg["tmp_dir"] = cfg["tmp_dir"] or os.path.join(
         "/tmp", "quran-pipeline", stem)
-    if cfg["background_image"] and not os.path.isabs(cfg["background_image"]):
-        cfg["background_image"] = os.path.join(src_dir, cfg["background_image"])
+    if cfg["background_image"]:
+        if cfg["background_image"].startswith("http://") or cfg["background_image"].startswith("https://"):
+            bg_url = cfg["background_image"]
+            ext = ".png" if ".png" in bg_url.lower() else ".jpg"
+            local_bg = os.path.join(src_dir, "bg_downloaded" + ext)
+            print("      downloading background image URL -> %s" % local_bg)
+            run(["curl", "-sL", "-o", local_bg, bg_url])
+            cfg["background_image"] = local_bg
+        elif not os.path.isabs(cfg["background_image"]):
+            cfg["background_image"] = os.path.join(src_dir, cfg["background_image"])
     return cfg
 
 
@@ -737,23 +752,42 @@ def run_config(config_path, output_override=None):
         cfg["whisper"], t0w, t0w + info["duration"] if cfg.get("trim") else None)
     print("      %d words in window (backend %s)" % (len(asr_words), asr_backend))
 
-    surah, a0, a1 = cfg["surah"], cfg["ayah_start"], cfg["ayah_end"]
-    if surah is None:
-        print("[3/6] Identifying verse span from the transcript...")
-        span = identify_verse_span(asr_words)
-        if span is None:
-            raise SystemExit("could not auto-identify the verse span; set "
-                             "surah/ayah_start/ayah_end in the config")
-        surah, a0, a1 = span["surah"], span["ayah_start"], span["ayah_end"]
-        print("      detected %s %d:%d-%d"
-              % (quran.surah_name(surah), surah, a0, a1))
+    if cfg.get("verses"):
+        verses = []
+        for spec in cfg["verses"]:
+            if isinstance(spec, str):
+                s, _, a = spec.partition(":")
+                v = quran.ayah(int(s), int(a))
+            elif isinstance(spec, dict):
+                v = quran.ayah(int(spec["surah"]), int(spec["ayah"]))
+            verses.append({
+                "surah": v["surah"], "ayah": v["ayah"],
+                "text_uthmani": quran.nfc(v["ar"]),
+                "translation": v["en"], "translation2": v["en2"]
+            })
+        surah = verses[0]["surah"]
+        a0 = verses[0]["ayah"]
+        a1 = verses[-1]["ayah"]
+        print("[3/6] Verses from config: %s"
+              % ", ".join("%d:%d" % (v["surah"], v["ayah"]) for v in verses))
     else:
-        a0 = int(a0 if a0 is not None else 1)
-        a1 = int(a1 if a1 is not None else a0)
-        print("[3/6] Verse span from config: %s %d:%d-%d"
-              % (quran.surah_name(surah), surah, a0, a1))
+        surah, a0, a1 = cfg["surah"], cfg["ayah_start"], cfg["ayah_end"]
+        if surah is None:
+            print("[3/6] Identifying verse span from the transcript...")
+            span = identify_verse_span(asr_words)
+            if span is None:
+                raise SystemExit("could not auto-identify the verse span; set "
+                                 "surah/ayah_start/ayah_end in the config")
+            surah, a0, a1 = span["surah"], span["ayah_start"], span["ayah_end"]
+            print("      detected %s %d:%d-%d"
+                  % (quran.surah_name(surah), surah, a0, a1))
+        else:
+            a0 = int(a0 if a0 is not None else 1)
+            a1 = int(a1 if a1 is not None else a0)
+            print("[3/6] Verse span from config: %s %d:%d-%d"
+                  % (quran.surah_name(surah), surah, a0, a1))
 
-    verses = fetch_verses(int(surah), a0, a1)
+        verses = fetch_verses(int(surah), a0, a1)
     words = spoken_words(verses)
 
     print("[4/6] Aligning %d mushaf words..." % len(words))
@@ -798,17 +832,74 @@ def run_config(config_path, output_override=None):
             "tmp": tmp, "out": cfg["output"]}
 
     print("[6/6] Rendering (%s style)..." % cfg["style"])
-    if cfg["style"] == "bars":
+    if cfg["style"] in ("bars", "bars_static", "bars static", "bars-static", "static_bars"):
         import render_bars
         render_bars.render(plan)
+    elif cfg["style"] in ("bloom", "glowing", "static_bloom"):
+        import render_bloom
+        render_bloom.render(plan)
+    elif cfg["style"] == "woven_box":
+        import render_woven_box
+        render_woven_box.render(plan)
     else:
         import render_default
         render_default.render(plan)
     print("Done: %s" % cfg["output"])
+
+    cap_en, cap_ar = format_caption(int(surah), a0, a1, cfg.get("reciter"), cfg.get("reciter_ar"))
+    print("\n--- CAPTION METADATA ---")
+    print("English: %s" % cap_en)
+    print("Arabic:  %s" % cap_ar)
+    print("------------------------\n")
+    save_caption_file(cfg["output"], cap_en, cap_ar, config_path)
+
     return {"surah": int(surah), "ayah_start": a0, "ayah_end": a1,
             "captions": len(arabic), "output": cfg["output"],
             "style": cfg["style"],
-            "signature": cfg["signature"]}
+            "signature": cfg["signature"],
+            "caption_en": cap_en,
+            "caption_ar": cap_ar}
+
+
+def to_arabic_digits(num_str):
+    mapping = str.maketrans("0123456789", "٠١٢٣٤٥٦٧٨٩")
+    return str(num_str).translate(mapping)
+
+
+def format_caption(surah, a0, a1, reciter=None, reciter_ar=None):
+    s_en = quran.surah_name(surah)
+    s_ar = quran.surah_name_ar(surah)
+    s_ar_name = re.sub(r"^(سُورَةُ|سورة)\s*", "", s_ar).strip()
+
+    r_en = reciter or "Saud Al-Shuraim"
+    r_ar = reciter_ar or "سعود الشريم"
+
+    verse_str = "%d-%d" % (a0, a1) if a0 != a1 else "%d" % a0
+    verse_str_ar = "%s - %s" % (to_arabic_digits(a0), to_arabic_digits(a1)) if a0 != a1 else to_arabic_digits(a0)
+
+    cap_en = "Surah %s %s by %s" % (s_en, verse_str, r_en)
+    cap_ar = "تلاوة من سورة %s(%s) للشيخ %s\n." % (s_ar_name, verse_str_ar, r_ar)
+    return cap_en, cap_ar
+
+
+def save_caption_file(output_mp4, cap_en, cap_ar, config_path=None):
+    caption_content = "%s\n\n%s" % (cap_en, cap_ar)
+    paths_to_write = []
+
+    out_txt = os.path.splitext(output_mp4)[0] + ".txt"
+    paths_to_write.append(out_txt)
+
+    if config_path:
+        cfg_txt = os.path.splitext(config_path)[0] + ".txt"
+        if os.path.abspath(cfg_txt) != os.path.abspath(out_txt):
+            paths_to_write.append(cfg_txt)
+
+    for path in paths_to_write:
+        os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(caption_content)
+        print("Caption text file saved: %s" % path)
+
 
 
 def main(argv=None):

@@ -221,7 +221,7 @@ def band_source_chain(crop, grade_on=True):
         pre, GRADE_EQ, GRADE_CB, GRADE_VIGNETTE)
 
 
-def derive_bar_color(src, dur, crop, tmp, grade_on=True):
+def derive_bar_color(src, dur, crop, tmp, grade_on=True, still=None):
     """Sample the clip's own GRADED band and apply the measured rule:
         H = hue of the band's mean RGB
         L = clamp(1.78 * L_mean, 0.34, 0.48)
@@ -232,10 +232,16 @@ def derive_bar_color(src, dur, crop, tmp, grade_on=True):
     a = BAR_AUTO
     tile = int(a["sample_tile"])
     tile_png = os.path.join(tmp, "bar_color_sample.png")
-    vf = (band_source_chain(crop, grade_on)
-          + ",fps=%s,scale=48:27,tile=%dx%d" % (a["sample_fps"], tile, tile))
-    run([FFMPEG, "-v", "error", "-y", "-t", "%.3f" % dur, "-i", src,
-         "-vf", vf, "-frames:v", "1", tile_png])
+    if still:
+        vf = (band_source_chain(crop, grade_on)
+              + ",scale=48:27,tile=1x1")
+        run([FFMPEG, "-v", "error", "-y", "-i", still,
+             "-vf", vf, "-frames:v", "1", tile_png])
+    else:
+        vf = (band_source_chain(crop, grade_on)
+              + ",fps=%s,scale=48:27,tile=%dx%d" % (a["sample_fps"], tile, tile))
+        run([FFMPEG, "-v", "error", "-y", "-t", "%.3f" % dur, "-i", src,
+             "-vf", vf, "-frames:v", "1", tile_png])
 
     px = [q for q in Image.open(tile_png).convert("RGB").getdata() if sum(q)]
     if not px:
@@ -557,7 +563,7 @@ def loudnorm_filter(st):
 # ---------------------------------------------------------------------------
 
 def build_graph(src, dur, crop, rep, sched, tint, on, snow_path, scrim_path,
-                ln, afade, sig_path=None):
+                ln, afade, sig_path=None, still_path=None):
     """-> (filter_complex, input argv). Inputs: [0]=source, [1..2n]=bar,text
     per phrase, then snow, then scrim (last of the legacy set, so dropping it
     cannot shift any other index), then the signature."""
@@ -571,7 +577,13 @@ def build_graph(src, dur, crop, rep, sched, tint, on, snow_path, scrim_path,
 
     ph_base = 1
     g_ = FX.Graph()
-    vin = g_.input(src, ss="0.000", t="%.3f" % dur)
+    if still_path:
+        ain = g_.input(src, ss="0.000", t="%.3f" % dur)
+        vin = g_.input(still_path, framerate=FPS, loop=1)
+        ph_base = 2
+    else:
+        vin = g_.input(src, ss="0.000", t="%.3f" % dur)
+        ain = vin
     ph_in = [g_.input(png, framerate=FPS, loop=1) for png in phrase_pngs]
     snow_in = g_.input(snow_path, stream_loop=-1) if snow_path else None
     scrim_in = (g_.input(scrim_path, framerate=FPS, loop=1)
@@ -653,8 +665,13 @@ def build_graph(src, dur, crop, rep, sched, tint, on, snow_path, scrim_path,
             if eff is not None:
                 lbl = eff.per_phrase(g_, ctx, i, lbl)
             nxt = f"c{i + 1}{name[0]}"
-            g_.chain([base, f"x{lbl}"], "overlay=0:0:format=auto:shortest=1",
-                     nxt)
+            if still_path:
+                ov_filter = ("overlay=0:0:format=auto:shortest=1:enable="
+                             "'between(t,%.3f,%.3f)'"
+                             % (max(0.0, t_in - 0.05), t_out + d_out + 0.05))
+            else:
+                ov_filter = "overlay=0:0:format=auto:shortest=1"
+            g_.chain([base, f"x{lbl}"], ov_filter, nxt)
             base = nxt
 
     # FX: applied to the captioned flat but cropped to the band and pasted
@@ -679,7 +696,7 @@ def build_graph(src, dur, crop, rep, sched, tint, on, snow_path, scrim_path,
         g_.chain(sig_in, "format=rgba", "sg")
         g_.chain(["flat", "sg"], "overlay=0:0:format=auto:shortest=1", "flats")
         g_.chain("flats", fades, "vout")
-    g_.chain(vin.a, [f for f in (ln, afade) if f], "aout")
+    g_.chain(ain.a, [f for f in (ln, afade) if f], "aout")
     return g_.render()
 
 
@@ -692,8 +709,9 @@ def render(plan):
     src, tmp = plan["src"], plan["tmp"]
     phrases = plan["arabic"]
     dur = info["duration"]
-    if not info["width"]:
-        raise SystemExit("bars style needs footage; it has no still-photo mode")
+    still = cfg.get("background_image")
+    if not info["width"] and not still:
+        raise SystemExit("bars style needs footage or background_image")
 
     crop = cfg.get("crop")
     if crop and not all(k in crop for k in ("x", "y", "w", "h")):
@@ -707,7 +725,7 @@ def render(plan):
         target_rgb = hexrgb(cfg["bar_color"])
         print("      bar colour: %s (config)" % cfg["bar_color"])
     else:
-        target_rgb = derive_bar_color(src, dur, crop, tmp, on["grade"])
+        target_rgb = derive_bar_color(src, dur, crop, tmp, on["grade"], still=still)
     drawn_rgb = predraw_color(target_rgb)
     tint = [c / 255.0 for c in target_rgb]
 
@@ -737,7 +755,8 @@ def render(plan):
                 AUDIO["fade_out_s"]))
 
     fc, in_argv = build_graph(src, dur, crop, rep, sched, tint, on,
-                              snow_path, scrim, ln, afade, sig_path)
+                               snow_path, scrim, ln, afade, sig_path,
+                               still_path=still)
 
     out = plan["out"]
     cmd = [FFMPEG, "-y", "-hide_banner"] + in_argv
