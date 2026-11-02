@@ -62,7 +62,7 @@ it:
 
 ```yaml
 style: bars                       # bars | default
-signature: "TilawatQuraniyyah"    # required; always horizontally centered
+signature: "Revelation.mp3"        # required; always horizontally centered
 signature_offset: 0               # px, vertical only: + lower / - higher
 surah: 78
 ayah_start: 31

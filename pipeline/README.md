@@ -34,8 +34,11 @@ generate.py
     ├── aligns the mushaf words against whisper.json for word-level timing
     ├── builds/corrects captions (silences, suppress, nudge, verse numbers)
     └── dispatches on style:
-        ├── render_default.py   landscape/vertical, Arabic + English
-        └── render_bars.py      1080x1920 letterbox band, Arabic-only pills
+        ├── render_default.py    landscape/vertical, Arabic + English
+        ├── render_bars.py       1080x1920 letterbox band, Arabic-only pills
+        ├── render_bloom.py      bloomy/glowing picture background + glowing text
+        └── render_woven_box.py  square, rounded video box on black, woven-
+                                  texture footage, Jomhuria Arabic-only
 ```
 
 ## Directory layout
@@ -92,7 +95,7 @@ authoritative schema (generated from the code, cannot drift). The shape:
 
 ```yaml
 style: bars                       # bars | default
-signature: "TilawatQuraniyyah"    # REQUIRED on every reel; null = burn nothing
+signature: "Revelation.mp3"        # REQUIRED on every reel; null = burn nothing
 
 surah: 78                         # omit all three to auto-detect from the
 ayah_start: 31                    # transcript (reliable for short spans only)
@@ -135,10 +138,11 @@ accepting a render: one rendering can paraphrase in a way that hides a
 mis-split, and where the two editions agree on clause order, a card whose
 English contradicts them is wrong.
 
-Output resolution: the `default` style's canvas is clamped so its short
-side sits in [720, 1080] — a low-quality source upscales to 720p minimum
-(captions draw at delivery resolution), a high-quality source caps at
-1080p. `bars` is always 1080x1920.
+Output resolution: the `default` and `woven_box` styles' canvas is clamped
+so its short side (for `woven_box`, its one side) sits in [720, 1080] — a
+low-quality source upscales to 720p minimum (captions draw at delivery
+resolution), a high-quality source caps at 1080p. `bars` is always
+1080x1920.
 
 Rules the pipeline enforces rather than trusts:
 
@@ -189,6 +193,19 @@ transcript; whisper.json records which backend wrote it.
   over. Per-reel switches via `fx:` (e.g. `fx: {heat: false}` — heat is
   ~half the render time and the one to drop for a timing preview; never
   judge the LOOK without the full stack).
+* **`bars_static`** — the full `bars` layout, transitions, and FX stack
+  rendered over a still-photo background (`background_image`) scaled and
+  graded into the 16:9 band with auto-derived pill color from the image.
+* **`bloom`** — bloomy and glowing full-frame static background with glowing
+  Arabic & English text.
+* **`woven_box`** — square (1:1) canvas: the footage sits in a rounded-corner
+  box inset to 90% of the canvas (face-centred 1:1 re-crop of a non-square
+  source, reusing `default`'s subject detection), the margin solid black.
+  Dimmed footage crossed with a procedurally-generated woven-cloth grain
+  (Pillow, no external texture asset — same spirit as `fx.py`'s snow),
+  Jomhuria Arabic-only captions with a small solid drop shadow, centred over
+  the footage inside the box. No English, no verse-number ornament, no `fx:`
+  stack.
 
 Subtitles are **centered by default** in both styles; `x_offset` /
 `y_offset` (px) are the only placement knobs.

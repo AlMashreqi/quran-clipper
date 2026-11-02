@@ -5,9 +5,12 @@ description: >-
   YouTube URL or a local video. Trigger on "make a post from <url>", "make a
   clip from this recitation", "turn this into a reel". Drives the pipeline/
   scripts: fetch.py -> transcribe.py -> quran.py -> a per-reel YAML config ->
-  generate.py. TWO styles: `bars` (vertical 9:16, Arabic-only Thuluth on
-  coloured pills, full FX stack) and `default` (Arabic + English over dimmed
-  footage), selected with `style:` in the config.
+  generate.py. Styles: `bars` (vertical 9:16, Arabic-only Thuluth on coloured
+  pills, full FX stack), `bars_static` (bars layout/FX over static background
+  image), `default` (Arabic + English over dimmed footage), `bloom` (bloomy &
+  glowing static background with glowing text), and `woven_box` (square,
+  rounded video box on black with woven-texture footage, Jomhuria
+  Arabic-only), selected with `style:` in the config.
 ---
 
 # make-post — Quran reel pipeline
@@ -75,7 +78,7 @@ The minimum that makes a good reel:
 
 ```yaml
 style: bars                       # or default
-signature: "TilawatQuraniyyah"    # REQUIRED; null = burn nothing
+signature: "Revelation.mp3"        # REQUIRED; null = burn nothing
 surah: 78
 ayah_start: 31
 ayah_end: 34
@@ -139,7 +142,13 @@ The account's standard, in priority order:
   clamped: a low-quality source upscales to 720p minimum so captions are
   drawn at delivery resolution; a high-quality source caps at 1080p. Bars
   is always 1080x1920.
-- Subtitles are CENTERED by default in both styles; `x_offset`/`y_offset`
+- `woven_box` — square (1:1) canvas, footage in a rounded-corner box inset
+  to 90% of the canvas on solid black, dimmed and crossed with a procedural
+  woven-cloth grain, Jomhuria Arabic-only captions over the footage. No
+  `english:`, no verse-number ornament, no `fx:` stack — `groups[].english`
+  is ignored for this style. Face-centred 1:1 re-crop of a non-square
+  source, same `detect_subject` knob as `default`.
+- Subtitles are CENTERED by default in every style; `x_offset`/`y_offset`
   (px) are the only placement knobs. The signature is ALWAYS horizontally
   centered — `signature_offset` (px, + lower / - higher) is its only knob.
 
@@ -179,5 +188,7 @@ full and use `trim` instead.
   config overwrites its own reel — that is fine. Never delete or overwrite
   a DIFFERENT reel, and never rename one without explicit intent: a posted
   reel's filename is its identity.
+- **Caption Text File**: Always generate the post caption text file (`.txt`) in the same folder as the output video file (e.g., `reels/<reel-name>.txt`). `generate.py` generates this automatically upon rendering (producing English & Arabic caption text lines as specified).
 - The legacy implementations under `legacy/` are ARCHIVED references —
   never run them as part of this flow.
+
