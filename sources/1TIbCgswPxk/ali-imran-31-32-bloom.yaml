@@ -1,0 +1,24 @@
+style: bloom
+signature: "Revelation.mp3"
+background_image: "bg.jpg"
+orientation: vertical
+
+surah: 3
+ayah_start: 31
+ayah_end: 32
+
+trim: [235.0, 310.0]
+
+groups:
+  - n_words: 6
+    english: 'Say, "If you should love Allah, then follow me,'
+  - n_words: 5
+    english: '[so] Allah will love you and forgive you your sins.'
+  - n_words: 3
+    english: 'And Allah is Forgiving and Merciful."'
+  - n_words: 4
+    english: 'Say, "Obey Allah and the Messenger."'
+  - n_words: 2
+    english: 'But if they turn away -'
+  - n_words: 5
+    english: 'then indeed, Allah does not like the disbelievers.'

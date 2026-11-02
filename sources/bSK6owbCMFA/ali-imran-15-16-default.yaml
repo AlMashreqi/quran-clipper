@@ -1,0 +1,26 @@
+# Aal-i-Imraan 3:15-16 - Saud Al-Shuraim - default style vertical reel
+style: default
+signature: "Revelation.mp3"
+orientation: vertical
+
+surah: 3
+ayah_start: 15
+ayah_end: 16
+
+trim: [0.0, 35.0]
+
+groups:
+  - n_words: 5
+    english: "Say, \"Shall I inform you of something better than that?"
+  - n_words: 4
+    english: "For those who fear Allah, with their Lord"
+  - n_words: 7
+    english: "are Gardens beneath which rivers flow, abiding therein forever,"
+  - n_words: 5
+    english: "and purified spouses and approval from Allah."
+  - n_words: 3
+    english: "And Allah is Seeing of His servants."
+  - n_words: 5
+    english: "Those who say, \"Our Lord, indeed we have believed,"
+  - n_words: 6
+    english: "so forgive us our sins and protect us from the punishment of the Fire.\""

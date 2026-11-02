@@ -1,0 +1,16 @@
+# al-Ahzab 33:45-46 -- bars style.
+style: bars
+signature: "TilawatQuraniyyah"
+
+surah: 33
+ayah_start: 45
+ayah_end: 46
+
+trim: [0.0, 37.8]
+
+groups:
+  - n_words: 3
+  - n_words: 2
+  - n_words: 2
+  - n_words: 3
+  - n_words: 3

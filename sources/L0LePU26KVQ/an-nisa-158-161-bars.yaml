@@ -1,0 +1,29 @@
+# An-Nisa 4:158-161 -- Sheikh Saleh Al Maghamsi (bars style)
+style: bars
+signature: "Revelation.mp3"
+
+surah: 4
+ayah_start: 158
+ayah_end: 161
+
+trim: [78.8, 126.5]
+
+groups:
+  # Ayah 158 (8 words)
+  - n_words: 4        # بل رفعه الله إليه
+  - n_words: 4        # وكان الله عزيزا حكيما
+
+  # Ayah 159 (14 words)
+  - n_words: 5        # وإن من أهل الكتاب إلا
+  - n_words: 4        # ليؤمنن به قبل موته
+  - n_words: 5        # ويوم القيامة يكون عليهم شهيدا
+
+  # Ayah 160 (14 words)
+  - n_words: 4        # فبظلم من الذين هادوا
+  - n_words: 5        # حرمنا عليهم طيبات أحلت لهم
+  - n_words: 5        # وبصدهم عن سبيل الله كثيرا
+
+  # Ayah 161 (14 words)
+  - n_words: 5        # وأخذهم الربا وقد نهوا عنه
+  - n_words: 4        # وأكلهم أموال الناس بالباطل
+  - n_words: 5        # وأعتدنا للكافرين منهم عذابا أليما

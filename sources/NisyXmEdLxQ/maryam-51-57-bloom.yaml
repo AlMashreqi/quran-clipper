@@ -1,0 +1,41 @@
+style: bloom
+signature: "Revelation.mp3"
+
+reciter: "Abdullah Al-Juhani"
+reciter_ar: "عبد الله الجهني"
+
+surah: 19
+ayah_start: 51
+ayah_end: 57
+
+trim: [571.5, 634.5]
+
+background_image: "bg.jpg"
+
+groups:
+  - n_words: 4
+    english: "And mention in the Book, Moses."
+  - n_words: 6
+    english: "Indeed, he was chosen, and he was a messenger and a prophet."
+  - n_words: 5
+    english: "And We called him from the right side of the mount"
+  - n_words: 2
+    english: "and brought him near, confiding in secret."
+  - n_words: 4
+    english: "And We granted him out of Our mercy"
+  - n_words: 3
+    english: "his brother Aaron as a prophet."
+  - n_words: 4
+    english: "And mention in the Book, Ishmael."
+  - n_words: 7
+    english: "Indeed, he was true to his promise, and was a messenger and a prophet."
+  - n_words: 5
+    english: "And he used to enjoin on his family prayer and zakah,"
+  - n_words: 4
+    english: "and was pleasing to his Lord."
+  - n_words: 4
+    english: "And mention in the Book, Idris."
+  - n_words: 4
+    english: "Indeed, he was a man of truth and a prophet."
+  - n_words: 3
+    english: "And We raised him to a high station."

@@ -1,0 +1,35 @@
+# An-Naml 27:19-21 - Issa Snako - bloom style reel
+style: bloom
+signature: "Revelation.mp3"
+reciter: "Issa Snako"
+reciter_ar: "عيسى سناكو"
+background_image: "bg.jpg"
+orientation: vertical
+
+surah: 27
+ayah_start: 19
+ayah_end: 21
+
+trim: [4.35, 59.6]
+
+groups:
+  - n_words: 4
+    english: "So [Solomon] smiled, amused at her speech,"
+  - n_words: 11
+    english: "and said, \"My Lord, enable me to be grateful for Your favor which You have bestowed upon me and upon my parents"
+  - n_words: 4
+    english: "and to do righteousness of which You approve."
+  - n_words: 5
+    english: "And admit me by Your mercy into [the ranks of] Your righteous servants.\""
+  - n_words: 3
+    english: "And he took attendance of the birds and said,"
+  - n_words: 5
+    english: "\"Why do I not see the hoopoe -"
+  - n_words: 4
+    english: "or is he among the absent?"
+  - n_words: 3
+    english: "I will surely punish him with a severe punishment"
+  - n_words: 2
+    english: "or slaughter him"
+  - n_words: 4
+    english: "unless he brings me clear authorization.\""

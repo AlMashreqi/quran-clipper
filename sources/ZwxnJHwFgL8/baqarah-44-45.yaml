@@ -1,0 +1,22 @@
+style: bloom
+signature: "Revelation.mp3"
+reciter: "Ahmad bin Talib"
+reciter_ar: "أحمد بن طالب"
+
+surah: 2
+ayah_start: 44
+ayah_end: 45
+
+trim: [0.0, 22.6]
+
+background_image: "bg.jpg"
+
+groups:
+  - n_words: 5
+    english: "Do you order righteousness of the people and forget yourselves"
+  - n_words: 5
+    english: "while you recite the Scripture? Then will you not reason?"
+  - n_words: 5
+    english: "And seek help through patience and prayer, and indeed, it is difficult"
+  - n_words: 3
+    english: "except for the humbly submissive [to Allah]"

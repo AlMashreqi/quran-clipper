@@ -1,0 +1,27 @@
+style: bars
+signature: "Revelation.mp3"
+
+reciter: "Abdullah Ghailan"
+reciter_ar: "عبد الله غيلان"
+
+surah: 3
+ayah_start: 33
+ayah_end: 35
+
+trim: [331.0, 428.5]
+
+groups:
+  - n_words: 5
+    line_split: 3
+  - n_words: 6
+    line_split: 3
+  - n_words: 4
+    line_split: 2
+  - n_words: 3
+  - n_words: 3
+    line_split: 2
+  - n_words: 7
+    line_split: 4
+  - n_words: 2
+  - n_words: 6
+    line_split: 3
